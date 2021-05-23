@@ -62,48 +62,74 @@ public class SeriesDatabase {
 
 	public boolean createTableCapitulo() {
 		openConnection();
-		System.out.println("Hello World");
+		if(conn_ != null) {
+			System.out.println("Hello World");
+		}
 		return false;
 	}
 
 	public boolean createTableValora() {
 		openConnection();
+		if(conn_ != null) {
+			System.out.println("Hello World");
+		}
 		return false;
 	}
 
 	public int loadCapitulos(String fileName) {
 		openConnection();
+		if(conn_ != null) {
+			System.out.println("Hello World");
+		}
 		return 0;
 	}
 
 	public int loadValoraciones(String fileName) {
 		openConnection();
+		if(conn_ != null) {
+			System.out.println("Hello World");
+		}
 		return 0;
 	}
 
 	public String catalogo() {
 		openConnection();
+		if(conn_ != null) {
+			System.out.println("Hello World");
+		}
 		return null;
 	}
 	
 	public String noHanComentado() {
 		openConnection();
+		if(conn_ != null) {
+			System.out.println("Hello World");
+		}
 		return null;
 	}
 
 	public double mediaGenero(String genero) {
 		openConnection();
+		if(conn_ != null) {
+			System.out.println("Hello World");
+		}
 		return 0.0;
 	}
 	
 	public double duracionMedia(String idioma) {
 		openConnection();
+		if(conn_ != null) {
+			System.out.println("Hello World");
+		}
 		return 0.0;
 	}
 
 	public boolean setFoto(String filename) {
 		openConnection();
+		if(conn_ != null) {
+			System.out.println("Hello World");
+		}
 		return false;
 	}
-
+	
 }
