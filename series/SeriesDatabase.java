@@ -29,11 +29,11 @@ public class SeriesDatabase {
 				Class.forName(drv);
 				System.out.println("Driver cargado correctamente");
 			} catch (ClassNotFoundException _e){
-				System.out.println("Error, el driver no se ha encontrado");
+				System.err.println("Error, el driver no se ha encontrado");
 				_e.printStackTrace();
 				return false;
 			} catch(Exception _e) {
-				System.out.println("Error inesperado " + _e.getMessage());
+				System.err.println("Error inesperado " + _e.getMessage());
 				return false;
 			}
 			
@@ -48,15 +48,15 @@ public class SeriesDatabase {
 				return true;
 			}catch (SQLException _e) {
 				conn_ = null;
-				System.out.println("Error, la base de datos no se ha encontrado");
+				System.err.println("Error, la base de datos no se ha encontrado");
 				_e.printStackTrace();
 				return false;
 			} catch(Exception _e) {
-				System.out.println("Error inesperado " + _e.getMessage());
+				System.err.println("Error inesperado " + _e.getMessage());
 				return false;
 			}
 		}else {
-			System.out.println("Base de Datos cargada anteriormente");
+			System.out.println("Base de Datos cargada anteriormente"); // warning
 			return false;
 		}
 	}
@@ -69,11 +69,11 @@ public class SeriesDatabase {
 				System.out.println("Base de Datos cerrada correctamente");
 				return true;
 			} catch(SQLException _e) {
-				System.out.println("Error, la base de datos no se ha encontrado");
+				System.err.println("Error, la base de datos no se ha encontrado");
 				_e.printStackTrace();
 				return false;
 			} catch(Exception _e) {
-				System.out.println("Error inesperado " + _e.getMessage());
+				System.err.println("Error inesperado " + _e.getMessage());
 				return false;
 			}			
 		}else {
@@ -90,14 +90,14 @@ public class SeriesDatabase {
 			rs = db.getTables(null, null, _table, new String[] {"TABLE"});
 			exist = rs.next();
 		} catch (SQLException e) {
-			System.out.println("Error al buscar la tabla " + _table);
+			System.err.println("Error al buscar la tabla " + _table);
 		} catch(Exception _e) {
-			System.out.println("Error inesperado " + _e.getMessage());
+			System.err.println("Error inesperado " + _e.getMessage());
 		}finally {
 			try {
 				if(rs!=null) rs.close();				
 			}catch(SQLException _e) {
-				System.out.println("Error al cerrar ResultSet");
+				System.err.println("Error al cerrar ResultSet");
 			}
 		}
 		return exist;
@@ -113,24 +113,23 @@ public class SeriesDatabase {
 					st.executeUpdate(_query);
 					System.out.println("Peticion de creacion de tabla " + _tableName + " realizada");
 				}catch (SQLException _e) {
-					System.out.println("Error al crear tabla " + _tableName);
+					System.err.println("Error al crear tabla " + _tableName);
 				} catch(Exception _e) {
-					System.out.println("Error inesperado " + _e.getMessage());
+					System.err.println("Error inesperado " + _e.getMessage());
 				}finally {
 					try {
 						if(st!=null) st.close();
 					}catch(SQLException _e){
-						System.out.println("Error al cerrar Statement");
+						System.err.println("Error al cerrar Statement");
 					}
 				}
-				
 				return checkIfTableExists(_tableName);
 			}else{
-				System.out.println("Tabla " + _tableName + " existe");
+				System.out.println("Tabla " + _tableName + " ya existe"); // warning
 				return false;
 			}
 		}else {
-			System.out.println("No hay conexion abierta");
+			System.err.println("No hay conexion abierta");
 			return false;
 		}
 	}
@@ -203,34 +202,38 @@ public class SeriesDatabase {
 				    	pst.setInt(2, Integer.parseInt(data[1]));
 				    	pst.setInt(3, Integer.parseInt(data[2]));
 				    	pst.setInt(4, Integer.parseInt(data[3]));
-				    	SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+				    	SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 				        Date parsed = format.parse(data[4]);
 				        java.sql.Date sqlDate = new java.sql.Date(parsed.getTime());
 				    	pst.setDate(5, sqlDate);
 				    	pst.setInt(6, Integer.parseInt(data[5]));
 				    }
-				    rowInserted = pst.executeUpdate();
+				    pst.executeUpdate();
+				    rowInserted++;
 				}
 				conn_.commit();				
 			} catch (FileNotFoundException _e) {
-				System.out.println("El archivo no existe");
+				System.err.println("El archivo no existe");
 			}catch (IOException _e) {
-				System.out.println("Fallo en la apertura del csv");
+				System.err.println("Fallo en la apertura del csv");
 			} catch (SQLException _e) {
-				System.out.println("Fallo con los PreparedStatement. Hacemos Rollback");
+				System.err.println("Fallo con los PreparedStatement. Hacemos Rollback");
+				System.err.println("Posibles fallos:");
+				System.err.println("-> Tabla " + _table + " no creada");
+				System.err.println("-> Alguno de los datos ha sido previamente insertado");
 				try {
 					conn_.rollback();
 					rowInserted = 0;
 				} catch (SQLException e) {
-					System.out.println("Fallo haciendo rollback");
+					System.err.println("Fallo haciendo rollback");
 				}
 			} catch(Exception _e) {
-				System.out.println("Error inesperado " + _e.getMessage() + ". Hacemos Rollback");
+				System.err.println("Error inesperado " + _e.getMessage() + ". Hacemos Rollback");
 				try {
 					conn_.rollback();
 					rowInserted = 0;
 				} catch (SQLException e) {
-					System.out.println("Fallo haciendo rollback");
+					System.err.println("Fallo haciendo rollback");
 				}
 			} finally {
 				try {
@@ -238,12 +241,15 @@ public class SeriesDatabase {
 					if(pst != null) pst.close();
 					conn_.setAutoCommit(true);
 				} catch (IOException _e) {
-					System.out.println("Fallo al cerrar el archivo");
+					System.err.println("Fallo al cerrar el archivo");
 				} catch (SQLException _e) {
-					System.out.println("Fallo al cerrar el Statement");
+					System.err.println("Fallo al cerrar el Statement");
 				}
 			}
+		}else {
+			System.err.println("No hay conexion abierta");
 		}
+		
 		return rowInserted * 6;
 	}
 
