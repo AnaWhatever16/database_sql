@@ -248,7 +248,6 @@ public class SeriesDatabase {
 		}else {
 			System.err.println("No hay conexion abierta");
 		}
-		
 		return rowInserted * 6;
 	}
 
