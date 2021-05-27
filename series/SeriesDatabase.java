@@ -6,13 +6,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.Date;
+import java.util.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 
 public class SeriesDatabase {
 	private static Connection conn_ = null;
@@ -191,7 +192,10 @@ public class SeriesDatabase {
 				    	pst.setInt(1, Integer.parseInt(data[0]));
 				    	pst.setInt(2, Integer.parseInt(data[1]));
 				    	pst.setInt(3, Integer.parseInt(data[2]));
-				    	pst.setDate(4, Date.valueOf(data[3]));
+				    	SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
+				        Date parsed = format.parse(data[3]);
+				        java.sql.Date sqlDate = new java.sql.Date(parsed.getTime());
+				    	pst.setDate(4, sqlDate);
 				    	pst.setString(5, data[4]);
 				    	pst.setInt(6, Integer.parseInt(data[5]));
 				    }else if (_table == "valora") {
@@ -199,7 +203,10 @@ public class SeriesDatabase {
 				    	pst.setInt(2, Integer.parseInt(data[1]));
 				    	pst.setInt(3, Integer.parseInt(data[2]));
 				    	pst.setInt(4, Integer.parseInt(data[3]));
-				    	pst.setDate(5, Date.valueOf(data[4]));
+				    	SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+				        Date parsed = format.parse(data[4]);
+				        java.sql.Date sqlDate = new java.sql.Date(parsed.getTime());
+				    	pst.setDate(5, sqlDate);
 				    	pst.setInt(6, Integer.parseInt(data[5]));
 				    }
 				    rowInserted = pst.executeUpdate();
