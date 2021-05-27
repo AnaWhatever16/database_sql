@@ -1,8 +1,14 @@
 package series;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.Date;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -157,21 +163,89 @@ public class SeriesDatabase {
 						"ON DELETE CASCADE ON UPDATE CASCADE);"; 
 		return handleTableCreation(query, "valora");
 	}
-
-	public int loadCapitulos(String fileName) {
+	
+	private int loadDataToTable(String _fileName, String _table) {
+		int rowInserted = 0;
 		openConnection();
 		if(conn_ != null) {
-			System.out.println("Hello World");
+			BufferedReader csvReader = null;
+			PreparedStatement pst = null;			
+			try {
+				csvReader = new BufferedReader(new FileReader(_fileName));
+				String row = csvReader.readLine();
+				String tableElements = row.replace(";", ", ");
+				int count = row.split(";").length;
+				String qms = "";
+				for(int i = 0; i < count; i++) {
+					qms += "?";
+					if(i != count-1) qms += ",";
+				}
+				String query = 	"INSERT INTO " + _table + "(" +
+								tableElements + ") " + 
+								"VALUES(" + qms + ");";
+				conn_.setAutoCommit(false);
+				pst = conn_.prepareStatement(query);
+				while ((row = csvReader.readLine()) != null) {
+				    String[] data = row.split(";");
+				    if(_table == "capitulo") { // HardCoded because we know what are the tables
+				    	pst.setInt(1, Integer.parseInt(data[0]));
+				    	pst.setInt(2, Integer.parseInt(data[1]));
+				    	pst.setInt(3, Integer.parseInt(data[2]));
+				    	pst.setDate(4, Date.valueOf(data[3]));
+				    	pst.setString(5, data[4]);
+				    	pst.setInt(6, Integer.parseInt(data[5]));
+				    }else if (_table == "valora") {
+				    	pst.setInt(1, Integer.parseInt(data[0]));
+				    	pst.setInt(2, Integer.parseInt(data[1]));
+				    	pst.setInt(3, Integer.parseInt(data[2]));
+				    	pst.setInt(4, Integer.parseInt(data[3]));
+				    	pst.setDate(5, Date.valueOf(data[4]));
+				    	pst.setInt(6, Integer.parseInt(data[5]));
+				    }
+				    rowInserted = pst.executeUpdate();
+				}
+				conn_.commit();				
+			} catch (FileNotFoundException _e) {
+				System.out.println("El archivo no existe");
+			}catch (IOException _e) {
+				System.out.println("Fallo en la apertura del csv");
+			} catch (SQLException _e) {
+				System.out.println("Fallo con los PreparedStatement. Hacemos Rollback");
+				try {
+					conn_.rollback();
+					rowInserted = 0;
+				} catch (SQLException e) {
+					System.out.println("Fallo haciendo rollback");
+				}
+			} catch(Exception _e) {
+				System.out.println("Error inesperado " + _e.getMessage() + ". Hacemos Rollback");
+				try {
+					conn_.rollback();
+					rowInserted = 0;
+				} catch (SQLException e) {
+					System.out.println("Fallo haciendo rollback");
+				}
+			} finally {
+				try {
+					if(csvReader !=null) csvReader.close();
+					if(pst != null) pst.close();
+					conn_.setAutoCommit(true);
+				} catch (IOException _e) {
+					System.out.println("Fallo al cerrar el archivo");
+				} catch (SQLException _e) {
+					System.out.println("Fallo al cerrar el Statement");
+				}
+			}
 		}
-		return 0;
+		return rowInserted * 6;
+	}
+
+	public int loadCapitulos(String fileName) {
+		return loadDataToTable(fileName, "capitulo");
 	}
 
 	public int loadValoraciones(String fileName) {
-		openConnection();
-		if(conn_ != null) {
-			System.out.println("Hello World");
-		}
-		return 0;
+		return loadDataToTable(fileName, "valora");
 	}
 
 	public String catalogo() {

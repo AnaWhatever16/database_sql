@@ -38,5 +38,15 @@ class seriesTest {
 		assertTrue(serieData.createTableValora());
 		assertFalse(serieData.createTableValora());
 	}
+	
+	@Test
+	void insertCapitulos() {
+		assertEquals(400, serieData.loadCapitulos("capitulos.csv"));
+	}
+	
+	@Test
+	void insertValoraciones() {
+		assertEquals(351, serieData.loadValoraciones("valoraciones.csv"));
+	}
 
 }
