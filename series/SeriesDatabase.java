@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 public class SeriesDatabase {
@@ -163,6 +164,33 @@ public class SeriesDatabase {
 		return handleTableCreation(query, "valora");
 	}
 	
+	private java.sql.Date stringToDate(String _string){
+		String sDate = _string.replace("/", " ");
+		sDate = sDate.replace("-", " ");
+		sDate = sDate.replace(".", " ");
+		sDate = sDate.replace("_", " ");
+		String[] vDate = sDate.split(" ");
+		SimpleDateFormat format = null;
+		if(vDate[0].length() == 4) {
+			format = new SimpleDateFormat("yyyy MM dd");
+		}else if(vDate[2].length() == 4) {
+			format = new SimpleDateFormat("dd MM yyyy");
+		}else {
+			System.err.println("Formato de fecha invalido");
+			return null;
+		}
+        Date parsed;
+		try {
+			parsed = format.parse(sDate);
+		} catch (ParseException e) {
+			System.err.println("Formato de fecha invalido");
+			return null;
+		}
+		
+        java.sql.Date sqlDate = new java.sql.Date(parsed.getTime());	
+        return sqlDate;
+	}
+	
 	private int loadDataToTable(String _fileName, String _table) {
 		int rowInserted = 0;
 		openConnection();
@@ -184,16 +212,20 @@ public class SeriesDatabase {
 								"VALUES(" + qms + ");";
 				conn_.setAutoCommit(false);
 				pst = conn_.prepareStatement(query);
+				boolean wrongDate = false;
 				while ((row = csvReader.readLine()) != null) {
 				    String[] data = row.split(";");
 				    if(_table == "capitulo") { // HardCoded because we know what are the tables
 				    	pst.setInt(1, Integer.parseInt(data[0]));
 				    	pst.setInt(2, Integer.parseInt(data[1]));
 				    	pst.setInt(3, Integer.parseInt(data[2]));
-				    	SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
-				        Date parsed = format.parse(data[3]);
-				        java.sql.Date sqlDate = new java.sql.Date(parsed.getTime());
-				    	pst.setDate(4, sqlDate);
+				    	java.sql.Date sqlDate = stringToDate(data[3]);
+				    	if(sqlDate != null) {
+				    		pst.setDate(4, sqlDate);				    		
+				    	}else {
+				    		wrongDate = true;
+				    		break;
+				    	}
 				    	pst.setString(5, data[4]);
 				    	pst.setInt(6, Integer.parseInt(data[5]));
 				    }else if (_table == "valora") {
@@ -201,16 +233,25 @@ public class SeriesDatabase {
 				    	pst.setInt(2, Integer.parseInt(data[1]));
 				    	pst.setInt(3, Integer.parseInt(data[2]));
 				    	pst.setInt(4, Integer.parseInt(data[3]));
-				    	SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-				        Date parsed = format.parse(data[4]);
-				        java.sql.Date sqlDate = new java.sql.Date(parsed.getTime());
-				    	pst.setDate(5, sqlDate);
-				    	pst.setInt(6, Integer.parseInt(data[5]));
+				    	java.sql.Date sqlDate = stringToDate(data[4]);
+				    	if(sqlDate != null) {
+				    		pst.setDate(5, sqlDate);				    		
+				    	}else {
+				    		wrongDate = true;
+				    		break;
+				    	}
+				    	pst.setInt(6, Integer.parseInt(data[5]));				    		
 				    }
 				    pst.executeUpdate();
 				    rowInserted++;
 				}
-				conn_.commit();				
+				if(!wrongDate) {
+					conn_.commit();				
+				}else {
+					System.err.println("Rollback debido a fallo con las fechas");
+					rowInserted = 0;
+					conn_.rollback();
+				}
 			} catch (FileNotFoundException _e) {
 				System.err.println("El archivo no existe");
 			}catch (IOException _e) {
@@ -227,7 +268,7 @@ public class SeriesDatabase {
 					System.err.println("Fallo haciendo rollback");
 				}
 			} catch(Exception _e) {
-				System.err.println("Error inesperado " + _e.getMessage() + ". Hacemos Rollback");
+				System.err.println("Error inesperado: " + _e.getMessage() + ". Hacemos Rollback");
 				try {
 					conn_.rollback();
 					rowInserted = 0;
