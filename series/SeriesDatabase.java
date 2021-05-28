@@ -319,29 +319,39 @@ public class SeriesDatabase {
 			String seriesYTemps = "{";
 			Statement st = null; // declaracion de la consulta 
 			ResultSet rs = null; //resultados de la consulta
-			String query = 	"SELECT s.titulo, t.n_capitulos" + 
-							"FROM serie s LEFT JOIN temporada t ON s.id_serie=t.id_serie" +
+			String query = 	"SELECT s.titulo, t.n_capitulos " + 
+							"FROM serie s LEFT JOIN temporada t ON s.id_serie=t.id_serie " +
 							"ORDER BY s.id_serie ASC, t.n_temporada ASC;";
 			try {
 				st = conn_.createStatement(); 
 				rs = st.executeQuery(query);
 				String tituloOld = "";
 				boolean primeraTupla = true;
+				boolean primeraTemp = true;
 				while(rs.next()) {
 					String titulo = rs.getString("titulo");
+					titulo = titulo.replace(" ", "_");
+					titulo = titulo.replace("'", "");
 					int capitulosTemp = rs.getInt("n_capitulos");
-					if(tituloOld != titulo) {
+					if(!tituloOld.equals(titulo)) {
 						if(!primeraTupla) {
-							seriesYTemps += "]";
+							seriesYTemps += "],";
 						}
 						seriesYTemps += titulo + ":[";
 						primeraTupla = false;
+						primeraTemp = true;
 					} 
 					if(capitulosTemp !=0) {
+						if(!primeraTemp) {
+							seriesYTemps += ",";
+						}
 						String ctString = Integer.toString(capitulosTemp);
 						seriesYTemps += ctString;
-					}
+						primeraTemp = false;
+					}					
+					tituloOld = titulo;
 				}
+				if(!seriesYTemps.equals("{")) seriesYTemps += "]";
 				seriesYTemps += "}";
 			} catch (SQLException _e) {
 				System.err.println("Problemas con la Statement");
