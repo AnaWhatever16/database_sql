@@ -64,9 +64,10 @@ CREATE TABLE pertenece (
 # Inserción de datos
 
 INSERT INTO serie(id_serie, titulo, sinopsis, idioma, fecha_estreno) VALUES(1, 'The Big Bang Theory', 'Leonard y Sheldon son científicos destacados en Caltech, amigos a su vez de Howard y Raj, que son presentados como unos completos geeks.', 'Inglés', '2007-09-24');
-INSERT INTO serie(id_serie, titulo, sinopsis, idioma, fecha_estreno) VALUES(2, 'Gambito de dama', 'Un absorbente drama de época que reivindica el ajedrez.', 'Inglés', '2020-10-23');
-INSERT INTO serie(id_serie, titulo, sinopsis, idioma, fecha_estreno) VALUES(3, 'Aquí no hay quien viva', 'Se narra la vida de una peculiar comunidad de vecinos de la ficticia calle Desengaño, 21.', 'Español', '2003-09-07');
-INSERT INTO serie(id_serie, titulo, sinopsis, idioma, fecha_estreno) VALUES(4, 'La casa de papel', 'Un misterioso hombre conocido como El Profesor está planeando el mayor atraco de la historia.', 'Español', '2017-05-05');
+INSERT INTO serie(id_serie, titulo, sinopsis, idioma, fecha_estreno) VALUES(2, 'Friends', '', 'Inglés', '2007-09-24');
+INSERT INTO serie(id_serie, titulo, sinopsis, idioma, fecha_estreno) VALUES(3, 'Gambito de dama', 'Un absorbente drama de época que reivindica el ajedrez.', 'Inglés', '2020-10-23');
+INSERT INTO serie(id_serie, titulo, sinopsis, idioma, fecha_estreno) VALUES(4, 'Aquí no hay quien viva', 'Se narra la vida de una peculiar comunidad de vecinos de la ficticia calle Desengaño, 21.', 'Español', '2003-09-07');
+INSERT INTO serie(id_serie, titulo, sinopsis, idioma, fecha_estreno) VALUES(5, 'La casa de papel', 'Un misterioso hombre conocido como El Profesor está planeando el mayor atraco de la historia.', 'Español', '2017-05-05');
 
 INSERT INTO temporada(n_temporada, n_capitulos, fecha_estreno, id_serie) VALUES(1, 17, '2007-09-24', 1);
 INSERT INTO temporada(n_temporada, n_capitulos, fecha_estreno, id_serie) VALUES(2, 23, '2008-09-22', 1);

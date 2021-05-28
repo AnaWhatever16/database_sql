@@ -15,13 +15,21 @@ import java.sql.Statement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
+//algo_ miembros de la clase
+//_algo elementos de entrada en f (privadas en este caso)
+//las clases empiezan con mayuscula y cada palabra con mayuscula
+//los miembros de las clases con minuscula la primera, el resto de palabras mayusculas
+//las funciones son miembros de la clase!
+//los constructores tienen el nombre de la clase (tienen datos de entrada etc)
+
+
 public class SeriesDatabase {
 	private static Connection conn_ = null;
 	
 	public SeriesDatabase() {
 		
 	}
-
+    
 	public boolean openConnection() {
 		if(conn_ == null) {
 			try {
@@ -308,9 +316,54 @@ public class SeriesDatabase {
 	public String catalogo() {
 		openConnection();
 		if(conn_ != null) {
-			System.out.println("Hello World");
+			String seriesYTemps = "{";
+			Statement st = null; // declaracion de la consulta 
+			ResultSet rs = null; //resultados de la consulta
+			String query = 	"SELECT s.titulo, t.n_capitulos" + 
+							"FROM serie s LEFT JOIN temporada t ON s.id_serie=t.id_serie" +
+							"ORDER BY s.id_serie ASC, t.n_temporada ASC;";
+			try {
+				st = conn_.createStatement(); 
+				rs = st.executeQuery(query);
+				String tituloOld = "";
+				boolean primeraTupla = true;
+				while(rs.next()) {
+					String titulo = rs.getString("titulo");
+					int capitulosTemp = rs.getInt("n_capitulos");
+					if(tituloOld != titulo) {
+						if(!primeraTupla) {
+							seriesYTemps += "]";
+						}
+						seriesYTemps += titulo + ":[";
+						primeraTupla = false;
+					} 
+					if(capitulosTemp !=0) {
+						String ctString = Integer.toString(capitulosTemp);
+						seriesYTemps += ctString;
+					}
+				}
+				seriesYTemps += "}";
+			} catch (SQLException _e) {
+				System.err.println("Problemas con la Statement");
+				seriesYTemps = null;
+			} catch(Exception _e) {
+				System.err.println("Error inesperado: " + _e.getMessage());
+				seriesYTemps = null;
+			} finally {
+				try {
+					if(st != null) st.close();
+					if(rs != null) rs.close();
+				} catch (SQLException e) {
+					System.err.println("Fallo al cerrar el Statement");
+					seriesYTemps = null;
+				}
+			}
+			return seriesYTemps;
+
+		}else {
+			System.err.println("No hay conexion abierta");
+			return null;
 		}
-		return null;
 	}
 	
 	public String noHanComentado() {
