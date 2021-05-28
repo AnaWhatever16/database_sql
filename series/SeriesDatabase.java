@@ -165,9 +165,9 @@ public class SeriesDatabase {
 	}
 	
 	private java.sql.Date stringToDate(String _string){
-		String sDate = _string.replace("/", " ");
-		sDate = sDate.replace("-", " ");
-		sDate = sDate.replace(".", " ");
+		String sDate = _string.replace("/", " "); 
+		sDate = sDate.replace("-", " ");			
+		sDate = sDate.replace(".", " ");			
 		sDate = sDate.replace("_", " ");
 		String[] vDate = sDate.split(" ");
 		SimpleDateFormat format = null;
@@ -179,15 +179,15 @@ public class SeriesDatabase {
 			System.err.println("Formato de fecha invalido");
 			return null;
 		}
-        Date parsed;
+        Date parsedDate = null;
 		try {
-			parsed = format.parse(sDate);
+			parsedDate = format.parse(sDate);
 		} catch (ParseException e) {
 			System.err.println("Formato de fecha invalido");
 			return null;
 		}
 		
-        java.sql.Date sqlDate = new java.sql.Date(parsed.getTime());	
+        java.sql.Date sqlDate = new java.sql.Date(parsedDate.getTime());	
         return sqlDate;
 	}
 	
@@ -241,6 +241,11 @@ public class SeriesDatabase {
 				    		break;
 				    	}
 				    	pst.setInt(6, Integer.parseInt(data[5]));				    		
+				    }else {
+				    	System.err.println("Solo se pueden insertar datos a las tablas capitulo o valora");
+				    	System.err.println("Si se desean insertar datos a otras tablas,");
+				    	System.err.println("añadir otro else if para añadir datos al preparedStatement en esta función");
+				    	break;
 				    }
 				    pst.executeUpdate();
 				    rowInserted++;
@@ -248,16 +253,16 @@ public class SeriesDatabase {
 				if(!wrongDate) {
 					conn_.commit();				
 				}else {
-					System.err.println("Rollback debido a fallo con las fechas");
-					rowInserted = 0;
+					System.err.println("Rollback debido a fallo con el formato de fechas");
 					conn_.rollback();
+					rowInserted = 0;
 				}
 			} catch (FileNotFoundException _e) {
 				System.err.println("El archivo no existe");
 			}catch (IOException _e) {
 				System.err.println("Fallo en la apertura del csv");
 			} catch (SQLException _e) {
-				System.err.println("Fallo con los PreparedStatement. Hacemos Rollback");
+				System.err.println("Fallo con los PreparedStatement o haciendo Commit. Hacemos Rollback");
 				System.err.println("Posibles fallos:");
 				System.err.println("-> Tabla " + _table + " no creada");
 				System.err.println("-> Alguno de los datos ha sido previamente insertado");
