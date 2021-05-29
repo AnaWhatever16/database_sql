@@ -1,6 +1,8 @@
 package series;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -529,8 +531,39 @@ public class SeriesDatabase {
 	public boolean setFoto(String filename) {
 		openConnection();
 		if(conn_ != null) {
-			System.out.println("Hello World");
+			String query = "INSERT INTO usuario (apellido1, fotografia) VALUES (?,?);";
+			PreparedStatement pst = null;
+			boolean success = false;
+			try {
+				pst = conn_.prepareStatement(query);
+				pst.setString(1, "Cabeza");
+				File file = new File(filename); 
+				FileInputStream fis = new FileInputStream(file);
+				pst.setBinaryStream(2, fis, (int)file.length());
+				pst.executeUpdate();	
+				success = true;
+			}catch (SQLException _e) {
+				System.err.println("Problemas con la Statement");	
+				success  = false;
+			}catch (FileNotFoundException _e) {
+				System.err.println("Fallo al abrir el archivo");
+				success = false;
+			} catch(Exception _e) {
+				System.err.println("Error inesperado: " + _e.getMessage());	
+				success = false;
+			} finally {
+				try {
+					if(pst != null) pst.close();
+				} catch (SQLException _e) {
+					System.err.println("Fallo al cerrar el Statement");
+				}
+			}
+			return success;
+		}else {
+			System.err.println("No hay conexion abierta");
+			return false;
 		}
-		return false;
 	}
 }
+
+
