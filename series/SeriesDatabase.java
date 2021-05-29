@@ -499,7 +499,7 @@ public class SeriesDatabase {
 				pst = conn_.prepareStatement(query); 
 				pst.setString(1, idioma);
 				rs = pst.executeQuery();
-				if(!rs.next()) {
+				if(!rs.next() || rs.getDouble("media") == 0) {
 					media = -1.0;
 				}else {
 					media = rs.getDouble("media");
