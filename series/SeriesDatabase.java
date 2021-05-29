@@ -531,25 +531,36 @@ public class SeriesDatabase {
 	public boolean setFoto(String filename) {
 		openConnection();
 		if(conn_ != null) {
-			String query = "UPDATE usuario "
-					+ "SET fotografia = ? "
-					+ "WHERE apellido1 = 'Cabeza' AND fotografia IS NULL"
-					+ "AND (SELECT COUNT(nombre) FROM usuario WHERE apellido1 = 'Cabeza')=1;"
-					
-					;
+			String query1 = "SELECT COUNT(nombre) AS cuenta " +
+							"FROM usuario " +
+							"WHERE apellido1 = 'Cabeza';";
+			String query2 = "UPDATE usuario " + 
+							"SET fotografia = ? " +
+							"WHERE apellido1 = 'Cabeza' AND fotografia IS NULL;";
 			PreparedStatement pst = null;
+			Statement st = null;
+			ResultSet rs = null;
 			boolean success = false;
 			try {
-				pst = conn_.prepareStatement(query);
-				File file = new File(filename); 
-				FileInputStream fis = new FileInputStream(file);
-				pst.setBinaryStream(1, fis, (int)file.length());
-				int result = pst.executeUpdate();	
-				if(result != 0) {
-					success = true;
+				st = conn_.createStatement();
+				rs = st.executeQuery(query1);
+				rs.next();
+				if(rs.getInt("cuenta")==1) {
+					pst = conn_.prepareStatement(query2);
+					File file = new File(filename); 
+					FileInputStream fis = new FileInputStream(file);
+					pst.setBinaryStream(1, fis, (int)file.length());
+					int result = pst.executeUpdate();	
+					if(result != 0) success = true;
+				}
+				if(success) {
 					System.out.println("Imagen añadida correctamente");
 				}else {
 					System.err.println("Imagen no añadida");
+					System.err.println("Si no ha saltado una excepción, los posibles fallos son:");
+					System.err.println("--> Imagen ya insertada en usuario");
+					System.err.println("--> No existe un usuario con apellido 'Cabeza'");
+					System.err.println("--> Existe más de un usuario apellidado 'Cabeza'");
 				}
 			}catch (SQLException _e) {
 				System.err.println("Problemas con la Statement");	
@@ -571,5 +582,3 @@ public class SeriesDatabase {
 		}
 	}
 }
-
-
