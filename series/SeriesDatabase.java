@@ -534,7 +534,9 @@ public class SeriesDatabase {
 			String query = "UPDATE usuario "
 					+ "SET fotografia = ? "
 					+ "WHERE apellido1 = 'Cabeza' AND fotografia IS NULL"
-					+ "AND COUNT(SELECT nombre FROM usuario WHERE apellido1 = 'Cabeza')=1;";
+					+ "AND (SELECT COUNT(nombre) FROM usuario WHERE apellido1 = 'Cabeza')=1;"
+					
+					;
 			PreparedStatement pst = null;
 			boolean success = false;
 			try {
