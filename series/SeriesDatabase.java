@@ -110,10 +110,20 @@ public class SeriesDatabase {
 			return true;
 		}
 	}
+	
 	//////////////////////////////////////////////////////////////////////////
 	/////////////////////FUNCIÓN 3: CREATE TABLE CAPITULO/////////////////////
 	//////////////////////////////////////////////////////////////////////////
+	// Creación de la tabla capítulo.
+	// Devuelve false si la tabla no se ha podido crear (por algún tipo de error o porque
+	// ya existiese) y true si la tabla se ha creado correctamente.
+	
 	public boolean createTableCapitulo() {
+		// Query SQL en formato String
+		// La PK de capítulo tiene las PK de serie y temporada
+		// (que por construcción existen ambas en temporada).
+		// Las actualizaciones se hacen en cascada tanto para 
+		// borrado como en actualización.
 		String query = 	"CREATE TABLE capitulo (" + 
 						"n_orden INT, " +
 						"titulo VARCHAR(100), " + 
@@ -124,13 +134,24 @@ public class SeriesDatabase {
 						"PRIMARY KEY (id_serie, n_temporada, n_orden), " +
 						"FOREIGN KEY (id_serie, n_temporada) REFERENCES temporada (id_serie, n_temporada) " +
 						"ON DELETE CASCADE ON UPDATE CASCADE);"; 
+		
+		// Esta función se encarga de la creación completa de la tabla y devuelve lo mismo 
+		// que debe devolver esta función.
 		return handleTableCreation(query, "capitulo");
 	}
 
 	////////////////////////////////////////////////////////////////////////
 	/////////////////////FUNCIÓN 4: CREATE TABLE VALORA/////////////////////
 	////////////////////////////////////////////////////////////////////////
+	// Creación de la tabla valora.
+	// Devuelve false si la tabla no se ha podido crear (por algún tipo de error o porque
+	// ya existiese) y true si la tabla se ha creado correctamente.
+	
 	public boolean createTableValora() {
+		// Query SQL en formato String
+		// La PK que viene de capítulo tiene las PK de serie y temporada.
+		// Las actualizaciones se hacen en cascada tanto para 
+		// borrado como en actualización.
 		String query = 	"CREATE TABLE valora (" + 
 						"id_serie INT, " +
 					    "n_temporada INT, " +
@@ -143,6 +164,8 @@ public class SeriesDatabase {
 						"ON DELETE CASCADE ON UPDATE CASCADE," +
 						"FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario) " +
 						"ON DELETE CASCADE ON UPDATE CASCADE);"; 
+		// Esta función se encarga de la creación completa de la tabla y devuelve lo mismo 
+		// que debe devolver esta función.
 		return handleTableCreation(query, "valora");
 	}
 
@@ -180,7 +203,6 @@ public class SeriesDatabase {
 				boolean primeraTemp = true;
 				while(rs.next()) {
 					String titulo = rs.getString("titulo");
-					titulo = cleanString(titulo);
 					int capitulosTemp = rs.getInt("n_capitulos");
 					if(!tituloOld.equals(titulo)) {
 						if(!primeraTupla) {
@@ -246,9 +268,9 @@ public class SeriesDatabase {
 					if(!primeraTupla) {
 						noCommentUsers += ", ";
 					}
-					String nombre = rs.getString("nombre");			nombre = cleanString(nombre);
-					String apellido1 = rs.getString("apellido1");	apellido1 = cleanString(apellido1);
-					String apellido2 = rs.getString("apellido2");	apellido2 = cleanString(apellido2);
+					String nombre = rs.getString("nombre");			
+					String apellido1 = rs.getString("apellido1");	
+					String apellido2 = rs.getString("apellido2");	
 					noCommentUsers += nombre + " " + apellido1 + " " + apellido2;
 					primeraTupla = false;
 				}
@@ -438,30 +460,33 @@ public class SeriesDatabase {
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////FUNCIONES PRIVADOS///////////////////////////////////////////////
+	///////////////////////////////////////////////FUNCIONES PRIVADAS///////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	/////////////////////////////////////////////////////////////////////////
-	//////////////////////////CHECK IS TABLE EXISTS//////////////////////////
+	//////////////////////////CHECK IF TABLE EXISTS//////////////////////////
 	/////////////////////////////////////////////////////////////////////////
 	
+	// Función para comprobación de la existencia de una tabla en la base de datos
+	// Devuelve true si la tabla existe y false si no existe o salta alguna excepción
 	private boolean checkIfTableExists(String _table) {
 		DatabaseMetaData db = null;
 		ResultSet rs = null;
 		boolean exist = false;
 		try {
-			db = conn_.getMetaData();
-			rs = db.getTables(null, null, _table, new String[] {"TABLE"});
-			exist = rs.next();
+			db = conn_.getMetaData(); // Cogemos el MetaData
+			rs = db.getTables(null, null, _table, new String[] {"TABLE"}); // Buscamos la tabla por su nombre
+			exist = rs.next(); // Si existe se almacena en rs
 		} catch (SQLException e) {
-			System.err.println("Error al buscar la tabla " + _table);
+			System.err.println("[ERROR] Error al buscar la tabla " + _table);
 		} catch(Exception _e) {
-			System.err.println("Error inesperado " + _e.getMessage());
+			System.err.println("[ERROR] Error inesperado " + _e.getMessage());
 		}finally {
 			try {
-				if(rs!=null) rs.close();				
+				//db no se tiene que cerrar.
+				if(rs!=null) rs.close(); //Cerramos rs. 			
 			}catch(SQLException _e) {
-				System.err.println("Error al cerrar ResultSet");
+				System.err.println("[ERROR] Error al cerrar ResultSet");
 			}
 		}
 		return exist;
@@ -471,33 +496,42 @@ public class SeriesDatabase {
 	///////////////////////////HANDLE TABLE CREATION/////////////////////////
 	/////////////////////////////////////////////////////////////////////////
 	
+	// Función de creación de tablas. Tiene de entradas la query en formato string
+	// de la creación de la tabla y otro string con el nombre de la tabla.
 	private boolean handleTableCreation(String _query, String _tableName) {
-		openConnection();
-		if(conn_ != null) {
-			if(!checkIfTableExists(_tableName)) {
+		openConnection(); // Comprobamos la conexión a la base de datos
+		if(conn_ != null) { // Comprobamos que la conexión esté abierta
+			if(!checkIfTableExists(_tableName)) { // Si la tabla no existe
+				// Ejecutamos la query de creación de tabla
 				Statement st = null;
 				try {
 					st = conn_.createStatement();
-					st.executeUpdate(_query);
-					System.out.println("Peticion de creacion de tabla " + _tableName + " realizada");
+					st.executeUpdate(_query); 
+					System.out.println("[INFO] Peticion de creacion de tabla " + _tableName + " realizada");
 				}catch (SQLException _e) {
-					System.err.println("Error al crear tabla " + _tableName);
+					System.err.println("[ERROR] Error al crear tabla " + _tableName);
 				} catch(Exception _e) {
-					System.err.println("Error inesperado " + _e.getMessage());
+					System.err.println("[ERROR] Error inesperado " + _e.getMessage());
 				}finally {
 					try {
 						if(st!=null) st.close();
 					}catch(SQLException _e){
-						System.err.println("Error al cerrar Statement");
+						System.err.println("[ERROR] Error al cerrar Statement");
 					}
 				}
-				return checkIfTableExists(_tableName);
+				if(checkIfTableExists(_tableName)) { // Comprobamos de nuevo para ver si se ha realizado con existo
+					System.out.println("[INFO] Tabla " + _tableName + " creada");
+					return true;
+				} else{
+					System.err.println("[ERROR] La tabla " + _tableName + " no se ha creado");
+					return false;
+				}
 			}else{
-				System.out.println("Tabla " + _tableName + " ya existe"); // warning
+				System.out.println("[WARNING] Tabla " + _tableName + " ya existe");
 				return false;
 			}
-		}else {
-			System.err.println("No hay conexion abierta");
+		}else { // Si la conexión no existe
+			System.err.println("[ERROR] No hay conexion abierta");
 			return false;
 		}
 	}
@@ -656,17 +690,5 @@ public class SeriesDatabase {
 			System.err.println("No hay conexion abierta");
 		}
 		return rowInserted * 6;
-	}
-	
-	/////////////////////////////////////////////////////////////////////////
-	//////////////////////////////CLEAN STRING///////////////////////////////
-	/////////////////////////////////////////////////////////////////////////
-	// Función utilizada para limpiar los string. 
-	// Sustituye los espacios por _ y quita las comillas simples.
-	
-	private String cleanString(String _string) {
-		String result = _string.replace(" ", "_");
-		result = result.replace("'", "");
-		return result;
 	}
 }
