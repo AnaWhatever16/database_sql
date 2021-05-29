@@ -384,7 +384,7 @@ public class SeriesDatabase {
 	public String noHanComentado() {
 		openConnection();
 		if(conn_ != null) {
-			String query = 	"SELECT u.nombre, u.apellido1, u.apellido2, c.texto " +
+			String query = 	"SELECT u.nombre, u.apellido1, u.apellido2 " +
 							"FROM usuario u LEFT JOIN comenta c ON u.id_usuario=c.id_usuario " +
 							"WHERE c.texto IS NULL " +
 							"ORDER BY u.apellido1 ASC, u.apellido2 ASC, u.nombre ASC;";
