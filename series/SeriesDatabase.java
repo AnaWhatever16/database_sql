@@ -531,26 +531,30 @@ public class SeriesDatabase {
 	public boolean setFoto(String filename) {
 		openConnection();
 		if(conn_ != null) {
-			String query = "INSERT INTO usuario (apellido1, fotografia) VALUES (?,?);";
+			String query = "UPDATE usuario "
+					+ "SET fotografia = ? "
+					+ "WHERE apellido1 = 'Cabeza' AND fotografia IS NULL"
+					+ "AND COUNT(SELECT nombre FROM usuario WHERE apellido1 = 'Cabeza')=1;";
 			PreparedStatement pst = null;
 			boolean success = false;
 			try {
 				pst = conn_.prepareStatement(query);
-				pst.setString(1, "Cabeza");
 				File file = new File(filename); 
 				FileInputStream fis = new FileInputStream(file);
-				pst.setBinaryStream(2, fis, (int)file.length());
-				pst.executeUpdate();	
-				success = true;
+				pst.setBinaryStream(1, fis, (int)file.length());
+				int result = pst.executeUpdate();	
+				if(result != 0) {
+					success = true;
+					System.out.println("Imagen añadida correctamente");
+				}else {
+					System.err.println("Imagen no añadida");
+				}
 			}catch (SQLException _e) {
 				System.err.println("Problemas con la Statement");	
-				success  = false;
 			}catch (FileNotFoundException _e) {
 				System.err.println("Fallo al abrir el archivo");
-				success = false;
 			} catch(Exception _e) {
 				System.err.println("Error inesperado: " + _e.getMessage());	
-				success = false;
 			} finally {
 				try {
 					if(pst != null) pst.close();
