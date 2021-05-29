@@ -312,6 +312,12 @@ public class SeriesDatabase {
 	public int loadValoraciones(String fileName) {
 		return loadDataToTable(fileName, "valora");
 	}
+	
+	private String cleanString(String _string) {
+		String result = _string.replace(" ", "_");
+		result = result.replace("'", "");
+		return result;
+	}
 
 	public String catalogo() {
 		openConnection();
@@ -330,8 +336,7 @@ public class SeriesDatabase {
 				boolean primeraTemp = true;
 				while(rs.next()) {
 					String titulo = rs.getString("titulo");
-					titulo = titulo.replace(" ", "_");
-					titulo = titulo.replace("'", "");
+					titulo = cleanString(titulo);
 					int capitulosTemp = rs.getInt("n_capitulos");
 					if(!tituloOld.equals(titulo)) {
 						if(!primeraTupla) {
@@ -363,7 +368,7 @@ public class SeriesDatabase {
 				try {
 					if(st != null) st.close();
 					if(rs != null) rs.close();
-				} catch (SQLException e) {
+				} catch (SQLException _e) {
 					System.err.println("Fallo al cerrar el Statement");
 					seriesYTemps = null;
 				}
@@ -379,9 +384,49 @@ public class SeriesDatabase {
 	public String noHanComentado() {
 		openConnection();
 		if(conn_ != null) {
-			System.out.println("Hello World");
+			String query = 	"SELECT u.nombre, u.apellido1, u.apellido2, c.texto " +
+							"FROM usuario u LEFT JOIN comenta c ON u.id_usuario=c.id_usuario " +
+							"WHERE c.texto IS NULL " +
+							"ORDER BY u.apellido1 ASC, u.apellido2 ASC, u.nombre ASC;";
+			Statement st = null;
+			ResultSet rs = null; 
+			String noCommentUsers = "[";
+			try {
+				st = conn_.createStatement(); 
+				rs = st.executeQuery(query);
+				boolean primeraTupla = true;
+				while(rs.next()) {
+					if(!primeraTupla) {
+						noCommentUsers += ", ";
+					}
+					String nombre = rs.getString("nombre");			nombre = cleanString(nombre);
+					String apellido1 = rs.getString("apellido1");	apellido1 = cleanString(apellido1);
+					String apellido2 = rs.getString("apellido2");	apellido2 = cleanString(apellido2);
+					noCommentUsers += nombre + " " + apellido1 + " " + apellido2;
+					primeraTupla = false;
+				}
+				noCommentUsers += "]";
+			} catch (SQLException _e) {
+				System.err.println("Problemas con la Statement");
+				noCommentUsers = null;
+			} catch(Exception _e) {
+				System.err.println("Error inesperado: " + _e.getMessage());
+				noCommentUsers = null;
+			} finally {
+				try {
+					if(st != null) st.close();
+					if(rs != null) rs.close();
+				} catch (SQLException _e) {
+					System.err.println("Fallo al cerrar el Statement");
+					noCommentUsers = null;
+				}
+			}
+			return noCommentUsers;
+
+		}else {
+			System.err.println("No hay conexion abierta");
+			return null;
 		}
-		return null;
 	}
 
 	public double mediaGenero(String genero) {
