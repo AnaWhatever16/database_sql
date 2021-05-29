@@ -172,14 +172,20 @@ public class SeriesDatabase {
 	//////////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 5: LOAD CAPITULOS/////////////////////
 	//////////////////////////////////////////////////////////////////
+	// Función que inserta las tuplas que vienen definidas en el archivo que se pasa
+	// como parámetro. Devuelve la cantidad de elementos insertados en la tabla.
 	public int loadCapitulos(String fileName) {
+		// Función que se encarga de la gestión de los datos y devuelve lo mismo.
 		return loadDataToTable(fileName, "capitulo");
 	}
 	
 	/////////////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 6: LOAD VALORACIONES/////////////////////
 	/////////////////////////////////////////////////////////////////////
+	// Función que inserta las tuplas que vienen definidas en el archivo que se pasa
+	// como parámetro. Devuelve la cantidad de elementos insertados en la tabla.
 	public int loadValoraciones(String fileName) {
+		// Función que se encarga de la gestión de los datos y devuelve lo mismo.
 		return loadDataToTable(fileName, "valora");
 	}
 
@@ -466,9 +472,9 @@ public class SeriesDatabase {
 	/////////////////////////////////////////////////////////////////////////
 	//////////////////////////CHECK IF TABLE EXISTS//////////////////////////
 	/////////////////////////////////////////////////////////////////////////
-	
 	// Función para comprobación de la existencia de una tabla en la base de datos
 	// Devuelve true si la tabla existe y false si no existe o salta alguna excepción
+	
 	private boolean checkIfTableExists(String _table) {
 		DatabaseMetaData db = null;
 		ResultSet rs = null;
@@ -495,9 +501,9 @@ public class SeriesDatabase {
 	/////////////////////////////////////////////////////////////////////////
 	///////////////////////////HANDLE TABLE CREATION/////////////////////////
 	/////////////////////////////////////////////////////////////////////////
-	
 	// Función de creación de tablas. Tiene de entradas la query en formato string
 	// de la creación de la tabla y otro string con el nombre de la tabla.
+	
 	private boolean handleTableCreation(String _query, String _tableName) {
 		openConnection(); // Comprobamos la conexión a la base de datos
 		if(conn_ != null) { // Comprobamos que la conexión esté abierta
@@ -539,7 +545,6 @@ public class SeriesDatabase {
 	/////////////////////////////////////////////////////////////////////////
 	/////////////////////////////STRING TO DATE//////////////////////////////
 	/////////////////////////////////////////////////////////////////////////
-	
 	// Función para gestionar distintos tipos de formatos de fecha
 	// a partir de un string. Esta función permite el soporte de 10 tipos de formatos.
 	// Le entrará un string que debería contener una fecha.
@@ -585,35 +590,46 @@ public class SeriesDatabase {
 	/////////////////////////////////////////////////////////////////////////
 	///////////////////////////LOAD DATA TO TABLE////////////////////////////
 	/////////////////////////////////////////////////////////////////////////
-	
+	// Función que se encarga de la gestión de la inserción de los datos en una tabla.
+	// Devuelve la cantidad de elementos insertados.
 	private int loadDataToTable(String _fileName, String _table) {
 		int rowInserted = 0;
-		openConnection();
-		if(conn_ != null) {
+		openConnection(); // Comprobamos que la conexión esté abierta
+		if(conn_ != null) { // Si está abierta
 			BufferedReader csvReader = null;
 			PreparedStatement pst = null;			
 			try {
-				csvReader = new BufferedReader(new FileReader(_fileName));
-				String row = csvReader.readLine();
+				csvReader = new BufferedReader(new FileReader(_fileName)); // Abrimos el archivo csv
+				// Leemos la primera línea del csv donde se encuentran los nombres de las columnas.
+				String row = csvReader.readLine(); 
 				String tableElements = row.replace(";", ", ");
+				// Añadimos tantos interrogantes a la PreparedStatement como 
+				// columnas tenga la tabla
 				int count = row.split(";").length;
-				String qms = "";
+				String qms = ""; 
 				for(int i = 0; i < count; i++) {
 					qms += "?";
 					if(i != count-1) qms += ",";
 				}
+				
+				// Preparamos el string de la query
 				String query = 	"INSERT INTO " + _table + "(" +
 								tableElements + ") " + 
 								"VALUES(" + qms + ");";
-				conn_.setAutoCommit(false);
-				pst = conn_.prepareStatement(query);
+				conn_.setAutoCommit(false); // Autocommit false para evitar inserciones en caso de error
+				pst = conn_.prepareStatement(query); // Preparamos la statement
 				boolean wrongDate = false;
-				while ((row = csvReader.readLine()) != null) {
+				while ((row = csvReader.readLine()) != null) { // Leemos línea a línea el csv
 				    String[] data = row.split(";");
-				    if(_table == "capitulo") { // HardCoded because we know what are the tables
+				    // Esta parte es menos dinámica porque para poder usar la preparedStatement
+				    // debemos conocer la forma de la tabla y los tipos. 
+				    // Es por ello que el else final dice que si queremos meter otra tabla con este método
+				    // debemos programarlo.
+				    if(_table == "capitulo") {
 				    	pst.setInt(1, Integer.parseInt(data[0]));
 				    	pst.setInt(2, Integer.parseInt(data[1]));
 				    	pst.setInt(3, Integer.parseInt(data[2]));
+				    	// Comprobamos que la fecha tiene formato soportado
 				    	java.sql.Date sqlDate = stringToDate(data[3]);
 				    	if(sqlDate != null) {
 				    		pst.setDate(4, sqlDate);				    		
@@ -628,6 +644,7 @@ public class SeriesDatabase {
 				    	pst.setInt(2, Integer.parseInt(data[1]));
 				    	pst.setInt(3, Integer.parseInt(data[2]));
 				    	pst.setInt(4, Integer.parseInt(data[3]));
+				    	// Comprobamos que la fecha tiene formato soportado
 				    	java.sql.Date sqlDate = stringToDate(data[4]);
 				    	if(sqlDate != null) {
 				    		pst.setDate(5, sqlDate);				    		
@@ -637,58 +654,62 @@ public class SeriesDatabase {
 				    	}
 				    	pst.setInt(6, Integer.parseInt(data[5]));				    		
 				    }else {
-				    	System.err.println("Solo se pueden insertar datos a las tablas capitulo o valora");
-				    	System.err.println("Si se desean insertar datos a otras tablas,");
-				    	System.err.println("añadir otro else if para añadir datos al preparedStatement en esta función");
+				    	System.err.println("[ERROR] Solo se pueden insertar datos a las tablas capitulo o valora");
+				    	System.err.println("Si se desean insertar datos a otras tablas, añadir otro else if");
 				    	break;
 				    }
-				    pst.executeUpdate();
-				    rowInserted++;
+				    pst.executeUpdate(); // En cada iteración ejecutamos la query con los nuevos datos
+				    rowInserted++; // Contamos una fila en cada iteración
 				}
-				if(!wrongDate) {
-					conn_.commit();				
-				}else {
-					System.err.println("Rollback debido a fallo con el formato de fechas");
+				
+				// Comprobamos si la salida del bucle while es debido a un formato de fecha invalido
+				if(!wrongDate) { // Si ha ido todo bien 
+					conn_.commit(); // Podemos hacer commit	
+				}else { // Si el formato de fecha no está soportado
+					System.err.println("[ERROR] Rollback debido a fallo con el formato de fechas");
 					conn_.rollback();
 					rowInserted = 0;
 				}
 			} catch (FileNotFoundException _e) {
-				System.err.println("El archivo no existe");
+				// No hacemos rollback ya que es anterior a la statement
+				System.err.println("[ERROR] El archivo no existe"); 
 			}catch (IOException _e) {
-				System.err.println("Fallo en la apertura del csv");
+				// No hacemos rollback ya que es anterior a la statement
+				System.err.println("[ERROR] Fallo en la apertura del csv");
 			} catch (SQLException _e) {
-				System.err.println("Fallo con los PreparedStatement o haciendo Commit. Hacemos Rollback");
+				System.err.println("[ERROR] Fallo con los PreparedStatement o haciendo Commit. Hacemos Rollback");
 				System.err.println("Posibles fallos:");
 				System.err.println("-> Tabla " + _table + " no creada");
 				System.err.println("-> Alguno de los datos ha sido previamente insertado");
 				try {
-					conn_.rollback();
+					conn_.rollback(); // Rollback porque ha habido algún error
 					rowInserted = 0;
 				} catch (SQLException e) {
-					System.err.println("Fallo haciendo rollback");
+					System.err.println("[ERROR] Fallo haciendo rollback");
 				}
 			} catch(Exception _e) {
-				System.err.println("Error inesperado: " + _e.getMessage() + ". Hacemos Rollback");
+				System.err.println("[ERROR] Error inesperado: " + _e.getMessage() + ". Hacemos Rollback");
 				try {
-					conn_.rollback();
+					conn_.rollback(); // Rollback para evitar problemas
 					rowInserted = 0;
 				} catch (SQLException e) {
-					System.err.println("Fallo haciendo rollback");
+					System.err.println("[ERROR] Fallo haciendo rollback");
 				}
 			} finally {
 				try {
+					// Cerramos los distintos elementos de la función
 					if(csvReader !=null) csvReader.close();
 					if(pst != null) pst.close();
-					conn_.setAutoCommit(true);
+					conn_.setAutoCommit(true); // Ponemos la config original (default) al autocommit
 				} catch (IOException _e) {
-					System.err.println("Fallo al cerrar el archivo");
+					System.err.println("[ERROR] Fallo al cerrar el archivo");
 				} catch (SQLException _e) {
-					System.err.println("Fallo al cerrar el Statement");
+					System.err.println("[ERROR] Fallo al cerrar el Statement");
 				}
 			}
 		}else {
-			System.err.println("No hay conexion abierta");
+			System.err.println("[ERROR] No hay conexion abierta");
 		}
-		return rowInserted * 6;
+		return rowInserted * 6; // Como tenemos 6 columnas en ambas tablas multiplicamos el número de inserciones por 6
 	}
 }
