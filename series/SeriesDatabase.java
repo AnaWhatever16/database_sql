@@ -532,7 +532,7 @@ public class SeriesDatabase {
 					System.err.println("[ERROR] La tabla " + _tableName + " no se ha creado");
 					return false;
 				}
-			}else{
+			}else{ // Si la tabla existe
 				System.out.println("[WARNING] Tabla " + _tableName + " ya existe");
 				return false;
 			}
@@ -592,6 +592,7 @@ public class SeriesDatabase {
 	/////////////////////////////////////////////////////////////////////////
 	// Función que se encarga de la gestión de la inserción de los datos en una tabla.
 	// Devuelve la cantidad de elementos insertados.
+	
 	private int loadDataToTable(String _fileName, String _table) {
 		int rowInserted = 0;
 		openConnection(); // Comprobamos que la conexión esté abierta

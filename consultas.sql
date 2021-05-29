@@ -24,8 +24,10 @@ ON DELETE CASCADE ON UPDATE CASCADE,
 FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario) 
 ON DELETE CASCADE ON UPDATE CASCADE);
 
-# Se añaden de manera dinámica en el código
+# Consulta de loadCapitulos
+# Se añaden de manera dinámica en el código las entradas de la tabla
 INSERT INTO capitulo(id_serie, n_temporada, n_orden, fecha_estreno, titulo, duracion) VALUE (?,?,?,?,?,?);
+# Consulta de loadValoraciones
 INSERT INTO valora(id_serie, n_temporada, n_orden, id_usuario, fecha, valor) VALUE (?,?,?,?,?,?)
 
 
