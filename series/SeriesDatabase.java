@@ -424,8 +424,8 @@ public class SeriesDatabase {
 			} finally {
 				try {
 					if(pst != null) pst.close();
-					if(st != null) pst.close();
-					if(rs != null) pst.close();
+					if(st != null) st.close();
+					if(rs != null) rs.close();
 				} catch (SQLException _e) {
 					System.err.println("Fallo al cerrar el Statement");
 				}
