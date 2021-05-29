@@ -192,12 +192,22 @@ public class SeriesDatabase {
 	////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 7: CATALOGO/////////////////////
 	////////////////////////////////////////////////////////////
+	//Este método retorna una cadena de caracteres que contiene 
+	//una lista con el nombre de cada una de las series seguidos
+	//del número de episodios de cada una de sus temporadas.
+	//El orden de las series será creciente según su ID_serie y, 
+	//dentro de cada una de ellas, en número de capítulos de cada
+	//temporada se ordenará en orden creciente del número de 
+	//temporada a la que pertenezcan.
+	
 	public String catalogo() {
 		openConnection();
 		if(conn_ != null) {
 			String seriesYTemps = "{";
 			Statement st = null; 
 			ResultSet rs = null; 
+			//mostramos los títulos y el número de capítulos. las tablas serie y título se conectan
+			//mediante un left join a través del identificador de la serie.
 			String query = 	"SELECT s.titulo, t.n_capitulos " + 
 							"FROM serie s LEFT JOIN temporada t ON s.id_serie=t.id_serie " +
 							"ORDER BY s.id_serie ASC, t.n_temporada ASC;";
@@ -207,9 +217,13 @@ public class SeriesDatabase {
 				String tituloOld = "";
 				boolean primeraTupla = true;
 				boolean primeraTemp = true;
-				while(rs.next()) {
+				while(rs.next()) { //hasta que no lleguemos al final de las tuplas y aquí 
+					//halla un null, se realizará este bucle.
 					String titulo = rs.getString("titulo");
 					int capitulosTemp = rs.getInt("n_capitulos");
+					//comparamos el tiulo de la serie de la tupla actual con el de 
+					//la anterior para asegurarnos de que añadimos un determinador
+					//número de capítulos a la serie que le corresponde
 					if(!tituloOld.equals(titulo)) {
 						if(!primeraTupla) {
 							seriesYTemps += "],";
@@ -256,9 +270,15 @@ public class SeriesDatabase {
 	////////////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 8: NO HAN COMENTADO/////////////////////
 	////////////////////////////////////////////////////////////////////
+	//El siguiente método devuelve una lista con los nombres y apellidos 
+	//de los usuarios que no han comentado ninguna serie.
+	
 	public String noHanComentado() {
 		openConnection();
 		if(conn_ != null) {
+			//los elementos han de estar ordenados alfabéticamente por el 
+			//primer apellido, en caso de empate, por el segundo y, en
+			//caso de empate, por el nombre
 			String query = 	"SELECT u.nombre, u.apellido1, u.apellido2 " +
 							"FROM usuario u LEFT JOIN comenta c ON u.id_usuario=c.id_usuario " +
 							"WHERE c.texto IS NULL " +
@@ -272,6 +292,8 @@ public class SeriesDatabase {
 				boolean primeraTupla = true;
 				while(rs.next()) {
 					if(!primeraTupla) {
+						//si no es el primer usuario de la lista de individuos que no
+						//han comentado, lo separamos del anterior con una coma
 						noCommentUsers += ", ";
 					}
 					String nombre = rs.getString("nombre");			
@@ -306,9 +328,20 @@ public class SeriesDatabase {
 	////////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 9: MEDIA GENERO/////////////////////
 	////////////////////////////////////////////////////////////////
+	//Este método devuelve la valoración media de los capítulos que
+	//pertenezcan a una serie en cuya descripción figure el género 
+	//que se pasa como String del parámetro del método.
+	
+	
 	public double mediaGenero(String genero) {
 		openConnection();
 		if(conn_ != null) {
+			//hacemos dos queries: la primera (query1) nos permite pasar el 
+			//género como string al método. La segunda (query2) da el valor 
+			//medio solicitado. El tercer inner join se hace considerando las 
+			//tuplas en las que la misma combinación de los atributos
+			//id_serie, n_orden, n_temporada esté presente en las tablas capitulo 
+			//y valora
 			String query1 = "SELECT descripcion FROM genero WHERE descripcion = ?;";
 			String query2 = "SELECT AVG(v.valor) AS media " +
 							"FROM capitulo c " + 
@@ -326,6 +359,8 @@ public class SeriesDatabase {
 				pst1.setString(1, genero);
 				rs1 = pst1.executeQuery();
 				if(!rs1.next()) {
+					//si el género introducido como parámetro 
+					//en el método no existe, se devuelve un -1
 					media = -1.0;
 				}else {
 					pst2 = conn_.prepareStatement(query2); 
@@ -334,9 +369,12 @@ public class SeriesDatabase {
 					if(rs2.next()) {
 						media = rs2.getDouble("media");
 					}else {
+						//si no hay ningún capítulo dentro del género 
+						//solicitado y este existe en la BBDD, se devuelve un 0
 						media = 0.0;
 					}
 				}
+			//Siempre que se genere alguna excepción, se devolverá un -2
 			} catch (SQLException _e) {
 				System.err.println("[EXCEPTION] Problemas con la Statement");
 				media = -2.0;
@@ -364,9 +402,20 @@ public class SeriesDatabase {
 	///////////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 10: DURACION MEDIA/////////////////////
 	///////////////////////////////////////////////////////////////////
+	//Este método debe retornar la duración media de aquellos capítulos
+	//que pertenezcan a una serie que esté en un determinado idioma 
+	//(el cual se pasa como parámetro) y que no hayan recibido ninguna 
+	//valoración por parte de los usuarios
 	public double duracionMedia(String idioma) {
 		openConnection();
 		if(conn_ != null) {
+			//Los capítulos pueden no tener valoraciones, por lo que se 
+			//hace el left join que vemos a continuacion, de forma que 
+			//se obtengan tanto aquellos capítulos valorados como aquellos
+			//que no. Para que la unión se realice correctamente, 
+			//se considera como conector aquel formado por los
+			//tres atributos que constituyen la PK de capítulo:
+			//d_serie, n_orden y n_temporada
 			String query = "SELECT AVG(c.duracion) AS media " +
 							"FROM capitulo c " +
 							"INNER JOIN serie s ON c.id_serie = s.id_serie " +
@@ -380,10 +429,14 @@ public class SeriesDatabase {
 				pst.setString(1, idioma);
 				rs = pst.executeQuery();
 				if(!rs.next() || rs.getDouble("media") == 0) {
+					//si no hay capítulos que cumplan con las condiciones
+					//y el género por el que se ha preguntado existe en la
+					//base de datos, se devuelve un -1
 					media = -1.0;
 				}else {
 					media = rs.getDouble("media");
 				}
+			//Si se produce una excepción, se retorna un -2
 			} catch (SQLException _e) {
 				System.err.println("[EXCEPTION] Problemas con la Statement");
 				media = -2.0;
@@ -409,12 +462,21 @@ public class SeriesDatabase {
 	/////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 11: SET FOTO/////////////////////
 	/////////////////////////////////////////////////////////////
+	//Este método añade una foto contenida en el fichero cuyo nombre
+	//se pasa como parámetro al usuario cuyo primer apellido es 
+	//'Cabeza'
+	
 	public boolean setFoto(String filename) {
 		openConnection();
 		if(conn_ != null) {
+			//se cuenta el número de usuarios que tienen como primer apellido
+			//'Cabeza'.
 			String query1 = "SELECT COUNT(nombre) AS cuenta " +
 							"FROM usuario " +
 							"WHERE apellido1 = 'Cabeza';";
+			//Se nos especifica que, una de las condiciones para que la inserción 
+			//de la foto se realice, es que no haya ya una foto en el lugar donde
+			//queremos insertarla
 			String query2 = "UPDATE usuario " + 
 							"SET fotografia = ? " +
 							"WHERE apellido1 = 'Cabeza' AND fotografia IS NULL;";
@@ -426,6 +488,8 @@ public class SeriesDatabase {
 				st = conn_.createStatement();
 				rs = st.executeQuery(query1);
 				rs.next();
+				//Otra condición para que se realice la inserción es que tiene que
+				//haber un único usuario cuyo primer apellido sea 'Cabeza'
 				if(rs.getInt("cuenta")==1) {
 					pst = conn_.prepareStatement(query2);
 					File file = new File(filename); 
