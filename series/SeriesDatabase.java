@@ -432,17 +432,98 @@ public class SeriesDatabase {
 	public double mediaGenero(String genero) {
 		openConnection();
 		if(conn_ != null) {
-			System.out.println("Hello World");
+			String query1 = "SELECT descripcion FROM genero WHERE descripcion = ?;";
+			String query2 = "SELECT AVG(v.valor) AS media " +
+							"FROM capitulo c " + 
+							"INNER JOIN pertenece p ON c.id_serie=p.id_serie " +
+							"INNER JOIN genero g ON p.id_genero=g.id_genero " +
+							"INNER JOIN valora v ON (c.id_serie, c.n_orden, c.n_temporada) = (v.id_serie, v.n_orden, v.n_temporada) " +
+							"WHERE g.descripcion = ?;";
+			PreparedStatement pst1 = null;
+			PreparedStatement pst2 = null;
+			ResultSet rs1 = null; 
+			ResultSet rs2 = null;
+			double media = -1.0;
+			try {
+				pst1 = conn_.prepareStatement(query1); 
+				pst1.setString(1, genero);
+				rs1 = pst1.executeQuery();
+				if(!rs1.next()) {
+					media = -1.0;
+				}else {
+					pst2 = conn_.prepareStatement(query2); 
+					pst2.setString(1, genero);
+					rs2 = pst2.executeQuery();
+					if(rs2.next()) {
+						media = rs2.getDouble("media");
+					}else {
+						media = 0.0;
+					}
+				}
+			} catch (SQLException _e) {
+				System.err.println("Problemas con la Statement");
+				media = -2.0;
+			} catch(Exception _e) {
+				System.err.println("Error inesperado: " + _e.getMessage());
+				media = -2.0;
+			} finally {
+				try {
+					if(pst1 != null) pst1.close();
+					if(rs1 != null) rs1.close();
+					if(pst2 != null) pst2.close();
+					if(rs2 != null) rs2.close();
+				} catch (SQLException _e) {
+					System.err.println("Fallo al cerrar el Statement");
+					media = -2.0;
+				}
+			}
+			return media;
+		}else {
+			System.err.println("No hay conexion abierta");
+			return -2.0;
 		}
-		return 0.0;
 	}
 	
 	public double duracionMedia(String idioma) {
 		openConnection();
 		if(conn_ != null) {
-			System.out.println("Hello World");
+			String query = "SELECT AVG(c.duracion) AS media " +
+							"FROM capitulo c " +
+							"INNER JOIN serie s ON c.id_serie = s.id_serie " +
+							"LEFT JOIN valora v ON (c.id_serie, c.n_orden, c.n_temporada) = (v.id_serie, v.n_orden, v.n_temporada) " +
+							"WHERE s.idioma = ? AND v.valor IS NULL;";
+			PreparedStatement pst = null;
+			ResultSet rs = null;
+			double media = -1.0;
+			try {
+				pst = conn_.prepareStatement(query); 
+				pst.setString(1, idioma);
+				rs = pst.executeQuery();
+				if(!rs.next()) {
+					media = -1.0;
+				}else {
+					media = rs.getDouble("media");
+				}
+			} catch (SQLException _e) {
+				System.err.println("Problemas con la Statement");
+				media = -2.0;
+			} catch(Exception _e) {
+				System.err.println("Error inesperado: " + _e.getMessage());
+				media = -2.0;
+			} finally {
+				try {
+					if(pst != null) pst.close();
+					if(rs != null) rs.close();
+				} catch (SQLException _e) {
+					System.err.println("Fallo al cerrar el Statement");
+					media = -2.0;
+				}
+			}
+			return media;
+		}else {
+			System.err.println("No hay conexion abierta");
+			return -2.0;
 		}
-		return 0.0;
 	}
 
 	public boolean setFoto(String filename) {
@@ -452,5 +533,4 @@ public class SeriesDatabase {
 		}
 		return false;
 	}
-	
 }
