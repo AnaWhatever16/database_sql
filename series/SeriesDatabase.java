@@ -174,6 +174,7 @@ public class SeriesDatabase {
 	//////////////////////////////////////////////////////////////////
 	// Función que inserta las tuplas que vienen definidas en el archivo que se pasa
 	// como parámetro. Devuelve la cantidad de elementos insertados en la tabla.
+	
 	public int loadCapitulos(String fileName) {
 		// Función que se encarga de la gestión de los datos y devuelve lo mismo.
 		return loadDataToTable(fileName, "capitulo");
@@ -184,6 +185,7 @@ public class SeriesDatabase {
 	/////////////////////////////////////////////////////////////////////
 	// Función que inserta las tuplas que vienen definidas en el archivo que se pasa
 	// como parámetro. Devuelve la cantidad de elementos insertados en la tabla.
+	
 	public int loadValoraciones(String fileName) {
 		// Función que se encarga de la gestión de los datos y devuelve lo mismo.
 		return loadDataToTable(fileName, "valora");
@@ -192,22 +194,23 @@ public class SeriesDatabase {
 	////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 7: CATALOGO/////////////////////
 	////////////////////////////////////////////////////////////
-	//Este método retorna una cadena de caracteres que contiene 
-	//una lista con el nombre de cada una de las series seguidos
-	//del número de episodios de cada una de sus temporadas.
-	//El orden de las series será creciente según su ID_serie y, 
-	//dentro de cada una de ellas, en número de capítulos de cada
-	//temporada se ordenará en orden creciente del número de 
-	//temporada a la que pertenezcan.
+	// Este método retorna una cadena de caracteres que contiene 
+	// una lista con el nombre de cada una de las series seguidos
+	// del número de episodios de cada una de sus temporadas.
+	// El orden de las series será creciente según su ID_serie y, 
+	// dentro de cada una de ellas, en número de capítulos de cada
+	// temporada se ordenará en orden creciente del número de 
+	// temporada a la que pertenezcan. Si ocurre alguna excepción
+	// se retorna null.
 	
 	public String catalogo() {
-		openConnection();
-		if(conn_ != null) {
+		openConnection(); // Comprobamos la conexión
+		if(conn_ != null) { // Si la conexión está abierta
 			String seriesYTemps = "{";
 			Statement st = null; 
 			ResultSet rs = null; 
-			//mostramos los títulos y el número de capítulos. las tablas serie y título se conectan
-			//mediante un left join a través del identificador de la serie.
+			// Mostramos los títulos y el número de capítulos. las tablas serie y título se conectan
+			// mediante un left join a través del identificador de la serie.
 			String query = 	"SELECT s.titulo, t.n_capitulos " + 
 							"FROM serie s LEFT JOIN temporada t ON s.id_serie=t.id_serie " +
 							"ORDER BY s.id_serie ASC, t.n_temporada ASC;";
@@ -217,13 +220,14 @@ public class SeriesDatabase {
 				String tituloOld = "";
 				boolean primeraTupla = true;
 				boolean primeraTemp = true;
-				while(rs.next()) { //hasta que no lleguemos al final de las tuplas y aquí 
-					//halla un null, se realizará este bucle.
+				// Hasta que no lleguemos al final de las tuplas y aquí
+				// halla un null, se realizará este bucle.
+				while(rs.next()) {  		
 					String titulo = rs.getString("titulo");
 					int capitulosTemp = rs.getInt("n_capitulos");
-					//comparamos el tiulo de la serie de la tupla actual con el de 
-					//la anterior para asegurarnos de que añadimos un determinador
-					//número de capítulos a la serie que le corresponde
+					// Comparamos el título de la serie de la tupla actual con el de 
+					// la anterior para asegurarnos de que añadimos un determinado
+					// número de capítulos a la serie que le corresponde
 					if(!tituloOld.equals(titulo)) {
 						if(!primeraTupla) {
 							seriesYTemps += "],";
@@ -232,6 +236,8 @@ public class SeriesDatabase {
 						primeraTupla = false;
 						primeraTemp = true;
 					} 
+					// Añadimos el número de capítulos si es
+					// distinto de cero
 					if(capitulosTemp !=0) {
 						if(!primeraTemp) {
 							seriesYTemps += ",";
@@ -242,6 +248,8 @@ public class SeriesDatabase {
 					}					
 					tituloOld = titulo;
 				}
+				// Condición para añadir corchete al último elemento
+				// si ha habido algo introducido a la string
 				if(!seriesYTemps.equals("{")) seriesYTemps += "]";
 				seriesYTemps += "}";
 			} catch (SQLException _e) {
@@ -252,6 +260,7 @@ public class SeriesDatabase {
 				seriesYTemps = null;
 			} finally {
 				try {
+					// Cerramos todo lo necesario
 					if(st != null) st.close();
 					if(rs != null) rs.close();
 				} catch (SQLException _e) {
@@ -270,15 +279,16 @@ public class SeriesDatabase {
 	////////////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 8: NO HAN COMENTADO/////////////////////
 	////////////////////////////////////////////////////////////////////
-	//El siguiente método devuelve una lista con los nombres y apellidos 
-	//de los usuarios que no han comentado ninguna serie.
+	// El siguiente método devuelve una lista con los nombres y apellidos 
+	// de los usuarios que no han comentado ninguna serie. Si ocurre alguna 
+	// excepción se retorna null.
 	
 	public String noHanComentado() {
-		openConnection();
-		if(conn_ != null) {
-			//los elementos han de estar ordenados alfabéticamente por el 
-			//primer apellido, en caso de empate, por el segundo y, en
-			//caso de empate, por el nombre
+		openConnection(); // Comprobamos la conexión
+		if(conn_ != null) { // Si la conexión está abierta
+			// Los elementos han de estar ordenados alfabéticamente por el 
+			// primer apellido, en caso de empate, por el segundo y, en
+			// caso de empate, por el nombre
 			String query = 	"SELECT u.nombre, u.apellido1, u.apellido2 " +
 							"FROM usuario u LEFT JOIN comenta c ON u.id_usuario=c.id_usuario " +
 							"WHERE c.texto IS NULL " +
@@ -288,12 +298,12 @@ public class SeriesDatabase {
 			String noCommentUsers = "[";
 			try {
 				st = conn_.createStatement(); 
-				rs = st.executeQuery(query);
+				rs = st.executeQuery(query); // Ejecutamos la query y recogemos el resultado
 				boolean primeraTupla = true;
-				while(rs.next()) {
+				while(rs.next()) { // Hasta que no halla elementos en el resultado
 					if(!primeraTupla) {
-						//si no es el primer usuario de la lista de individuos que no
-						//han comentado, lo separamos del anterior con una coma
+						// Si no es el primer usuario de la lista de individuos que no
+						// han comentado, lo separamos del anterior con una coma
 						noCommentUsers += ", ";
 					}
 					String nombre = rs.getString("nombre");			
@@ -320,7 +330,7 @@ public class SeriesDatabase {
 			}
 			return noCommentUsers;
 
-		}else {
+		}else { // Si no hay conexión abierta
 			System.err.println("[ERROR] No hay conexion abierta");
 			return null;
 		}
@@ -328,20 +338,19 @@ public class SeriesDatabase {
 	////////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 9: MEDIA GENERO/////////////////////
 	////////////////////////////////////////////////////////////////
-	//Este método devuelve la valoración media de los capítulos que
-	//pertenezcan a una serie en cuya descripción figure el género 
-	//que se pasa como String del parámetro del método.
-	
+	// Este método devuelve la valoración media de los capítulos que
+	// pertenezcan a una serie en cuya descripción figure el género 
+	// que se pasa como String del parámetro del método.
 	
 	public double mediaGenero(String genero) {
-		openConnection();
-		if(conn_ != null) {
-			//hacemos dos queries: la primera (query1) nos permite pasar el 
-			//género como string al método. La segunda (query2) da el valor 
-			//medio solicitado. El tercer inner join se hace considerando las 
-			//tuplas en las que la misma combinación de los atributos
-			//id_serie, n_orden, n_temporada esté presente en las tablas capitulo 
-			//y valora
+		openConnection(); // Comprobamos la conexión
+		if(conn_ != null) { // Si la conexión está abierta
+			// Hacemos dos queries: la primera (query1) nos permite pasar el 
+			// género como string al método. La segunda (query2) da el valor 
+			// medio solicitado. El tercer inner join se hace considerando las 
+			// tuplas en las que la misma combinación de los atributos
+			// id_serie, n_orden, n_temporada esté presente en las tablas capitulo 
+			// y valora
 			String query1 = "SELECT descripcion FROM genero WHERE descripcion = ?;";
 			String query2 = "SELECT AVG(v.valor) AS media " +
 							"FROM capitulo c " + 
@@ -355,26 +364,27 @@ public class SeriesDatabase {
 			ResultSet rs2 = null;
 			double media = -1.0;
 			try {
-				pst1 = conn_.prepareStatement(query1); 
+				pst1 = conn_.prepareStatement(query1); // Preparamos la query1
 				pst1.setString(1, genero);
-				rs1 = pst1.executeQuery();
+				rs1 = pst1.executeQuery(); // Ejecutamos la query1
 				if(!rs1.next()) {
-					//si el género introducido como parámetro 
-					//en el método no existe, se devuelve un -1
+					// Si el género introducido como parámetro 
+					// en el método no existe, se devuelve un -1
 					media = -1.0;
 				}else {
-					pst2 = conn_.prepareStatement(query2); 
+					pst2 = conn_.prepareStatement(query2); // Preparamos la query2
 					pst2.setString(1, genero);
-					rs2 = pst2.executeQuery();
+					rs2 = pst2.executeQuery(); // Ejecutamos la query2 
 					if(rs2.next()) {
-						media = rs2.getDouble("media");
+						media = rs2.getDouble("media"); // Recogemos el valor devuelto
 					}else {
-						//si no hay ningún capítulo dentro del género 
-						//solicitado y este existe en la BBDD, se devuelve un 0
+						// Si no hay ningún capítulo dentro del género 
+						// solicitado y pero el género existe en la BBDD, 
+						// se devuelve un 0
 						media = 0.0;
 					}
 				}
-			//Siempre que se genere alguna excepción, se devolverá un -2
+			//Siempre que se genere alguna excepción o error, se devolverá un -2
 			} catch (SQLException _e) {
 				System.err.println("[EXCEPTION] Problemas con la Statement");
 				media = -2.0;
@@ -383,6 +393,7 @@ public class SeriesDatabase {
 				media = -2.0;
 			} finally {
 				try {
+					// Cerramos todo lo necesario
 					if(pst1 != null) pst1.close();
 					if(rs1 != null) rs1.close();
 					if(pst2 != null) pst2.close();
@@ -393,7 +404,7 @@ public class SeriesDatabase {
 				}
 			}
 			return media;
-		}else {
+		}else { // Si no hay conexión
 			System.err.println("[ERROR] No hay conexion abierta");
 			return -2.0;
 		}
@@ -402,20 +413,21 @@ public class SeriesDatabase {
 	///////////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 10: DURACION MEDIA/////////////////////
 	///////////////////////////////////////////////////////////////////
-	//Este método debe retornar la duración media de aquellos capítulos
-	//que pertenezcan a una serie que esté en un determinado idioma 
-	//(el cual se pasa como parámetro) y que no hayan recibido ninguna 
-	//valoración por parte de los usuarios
+	// Este método debe retornar la duración media de aquellos capítulos
+	// que pertenezcan a una serie que esté en un determinado idioma 
+	// (el cual se pasa como parámetro) y que no hayan recibido ninguna 
+	// valoración por parte de los usuarios.
+	
 	public double duracionMedia(String idioma) {
-		openConnection();
-		if(conn_ != null) {
-			//Los capítulos pueden no tener valoraciones, por lo que se 
-			//hace el left join que vemos a continuacion, de forma que 
-			//se obtengan tanto aquellos capítulos valorados como aquellos
-			//que no. Para que la unión se realice correctamente, 
-			//se considera como conector aquel formado por los
-			//tres atributos que constituyen la PK de capítulo:
-			//d_serie, n_orden y n_temporada
+		openConnection(); // Comprobamos la conexión
+		if(conn_ != null) { // Si la conexión está abierta
+			// Los capítulos pueden no tener valoraciones, por lo que se 
+			// hace el left join que vemos a continuacion, de forma que 
+			// se obtengan tanto aquellos capítulos valorados como aquellos
+			// que no. Para que la unión se realice correctamente, 
+			// se considera como conector aquel formado por los
+			// tres atributos que constituyen la PK de capítulo:
+			// d_serie, n_orden y n_temporada
 			String query = "SELECT AVG(c.duracion) AS media " +
 							"FROM capitulo c " +
 							"INNER JOIN serie s ON c.id_serie = s.id_serie " +
@@ -425,16 +437,16 @@ public class SeriesDatabase {
 			ResultSet rs = null;
 			double media = -1.0;
 			try {
-				pst = conn_.prepareStatement(query); 
-				pst.setString(1, idioma);
-				rs = pst.executeQuery();
+				pst = conn_.prepareStatement(query); // Preparamos la query
+				pst.setString(1, idioma); 
+				rs = pst.executeQuery(); // Ejecutamos la query
 				if(!rs.next() || rs.getDouble("media") == 0) {
-					//si no hay capítulos que cumplan con las condiciones
-					//y el género por el que se ha preguntado existe en la
-					//base de datos, se devuelve un -1
+					// Si no hay capítulos que cumplan con las condiciones
+					// y el género por el que se ha preguntado existe en la
+					// base de datos, se devuelve un -1
 					media = -1.0;
 				}else {
-					media = rs.getDouble("media");
+					media = rs.getDouble("media"); // Recogemos el resultado
 				}
 			//Si se produce una excepción, se retorna un -2
 			} catch (SQLException _e) {
@@ -445,6 +457,7 @@ public class SeriesDatabase {
 				media = -2.0;
 			} finally {
 				try {
+					// Cerramos lo necesario
 					if(pst != null) pst.close();
 					if(rs != null) rs.close();
 				} catch (SQLException _e) {
@@ -453,7 +466,7 @@ public class SeriesDatabase {
 				}
 			}
 			return media;
-		}else {
+		}else { // Si la conexión está cerrada
 			System.err.println("[ERROR] No hay conexion abierta");
 			return -2.0;
 		}
@@ -462,21 +475,23 @@ public class SeriesDatabase {
 	/////////////////////////////////////////////////////////////
 	////////////////////FUNCIÓN 11: SET FOTO/////////////////////
 	/////////////////////////////////////////////////////////////
-	//Este método añade una foto contenida en el fichero cuyo nombre
-	//se pasa como parámetro al usuario cuyo primer apellido es 
-	//'Cabeza'
+	// Este método añade una foto contenida en el fichero cuyo nombre
+	// se pasa como parámetro al usuario cuyo primer apellido es 
+	// 'Cabeza'. Devuelve true si se añade la foto y false si no se
+	// añade debido a excepciones, que el usuario ya tuviese una foto,
+	// que haya más de un usuario de apellido 'Cabeza' o que no haya nunguno.
 	
 	public boolean setFoto(String filename) {
 		openConnection();
 		if(conn_ != null) {
-			//se cuenta el número de usuarios que tienen como primer apellido
-			//'Cabeza'.
+			// Se cuenta el número de usuarios que tienen como primer apellido
+			// 'Cabeza'.
 			String query1 = "SELECT COUNT(nombre) AS cuenta " +
 							"FROM usuario " +
 							"WHERE apellido1 = 'Cabeza';";
-			//Se nos especifica que, una de las condiciones para que la inserción 
-			//de la foto se realice, es que no haya ya una foto en el lugar donde
-			//queremos insertarla
+			// Se nos especifica que, una de las condiciones para que la inserción 
+			// de la foto se realice, es que no haya ya una foto en el lugar donde
+			// queremos insertarla
 			String query2 = "UPDATE usuario " + 
 							"SET fotografia = ? " +
 							"WHERE apellido1 = 'Cabeza' AND fotografia IS NULL;";
@@ -488,8 +503,8 @@ public class SeriesDatabase {
 				st = conn_.createStatement();
 				rs = st.executeQuery(query1);
 				rs.next();
-				//Otra condición para que se realice la inserción es que tiene que
-				//haber un único usuario cuyo primer apellido sea 'Cabeza'
+				// Otra condición para que se realice la inserción es que tiene que
+				// haber un único usuario cuyo primer apellido sea 'Cabeza'
 				if(rs.getInt("cuenta")==1) {
 					pst = conn_.prepareStatement(query2);
 					File file = new File(filename); 
@@ -508,22 +523,23 @@ public class SeriesDatabase {
 					System.err.println("--> Existe más de un usuario apellidado 'Cabeza'");
 				}
 			}catch (SQLException _e) {
-				System.err.println("[EXCEPTION] Problemas con la Statement");	
+				System.err.println("[EXCEPTION] Problemas con las Statement");	
 			}catch (FileNotFoundException _e) {
 				System.err.println("[EXCEPTION] Fallo al abrir el archivo");
 			} catch(Exception _e) {
 				System.err.println("[EXCEPTION] Error inesperado: " + _e.getMessage());	
 			} finally {
 				try {
+					// Cerramos lo necesario
 					if(pst != null) pst.close();
 					if(st != null) st.close();
 					if(rs != null) rs.close();
 				} catch (SQLException _e) {
-					System.err.println("[EXCEPTION] Fallo al cerrar el Statement");
+					System.err.println("[EXCEPTION] Fallo al cerrar algún elemento");
 				}
 			}
 			return success;
-		}else {
+		}else { // Si la conexión está cerrada
 			System.err.println("[ERROR] No hay conexion abierta");
 			return false;
 		}
