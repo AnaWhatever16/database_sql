@@ -31,18 +31,18 @@ INSERT INTO capitulo(id_serie, n_temporada, n_orden, fecha_estreno, titulo, dura
 # Consulta de loadValoraciones
 INSERT INTO valora(id_serie, n_temporada, n_orden, id_usuario, fecha, valor) VALUE (?,?,?,?,?,?);
 
-#Consulta catalogo
+# Consulta catalogo
 SELECT s.titulo, t.n_capitulos   
 FROM serie s LEFT JOIN temporada t ON s.id_serie=t.id_serie  
 ORDER BY s.id_serie ASC, t.n_temporada ASC;
 
-#Consulta noHanComentado
+# Consulta noHanComentado
 SELECT u.nombre, u.apellido1, u.apellido2  
 FROM usuario u LEFT JOIN comenta c ON u.id_usuario=c.id_usuario  
 WHERE c.texto IS NULL  
 ORDER BY u.apellido1 ASC, u.apellido2 ASC, u.nombre ASC;
 
-#Consultas mediaGenero
+# Consultas mediaGenero
 SELECT descripcion FROM genero WHERE descripcion = ?;
 
 SELECT AVG(v.valor) AS media  
@@ -52,14 +52,14 @@ INNER JOIN genero g ON p.id_genero=g.id_genero
 INNER JOIN valora v ON (c.id_serie, c.n_orden, c.n_temporada) = (v.id_serie, v.n_orden, v.n_temporada)  
 WHERE g.descripcion = ?;
 
-#Consulta duracionMedia
+# Consulta duracionMedia
 SELECT AVG(c.duracion) AS media  
 FROM capitulo c  
 INNER JOIN serie s ON c.id_serie = s.id_serie  
 LEFT JOIN valora v ON (c.id_serie, c.n_orden, c.n_temporada) = (v.id_serie, v.n_orden, v.n_temporada)  
 WHERE s.idioma = ? AND v.valor IS NULL;
 
-#Consultas setFoto
+# Consultas setFoto
 SELECT COUNT(nombre) AS cuenta  
 FROM usuario  
 WHERE apellido1 = 'Cabeza';
